@@ -5,9 +5,9 @@ import time
 app = Flask(__name__)
 
 # ==================== CONFIG =====================
-YOUR_API_KEYS = ["ERROR"]
+YOUR_API_KEYS = ["ERROR"]   # 👈 jo key use karni ho wahi rakho
 TARGET_API = "https://numberinfoanshapi.api-e3a.workers.dev/"
-CACHE_TIME = 3600  # seconds
+CACHE_TIME = 3600
 # ================================================
 
 cache = {}
@@ -23,17 +23,13 @@ def clean_text(value):
 
 
 def remove_credit_fields(obj):
-    """Remove credit/branding fields deeply"""
     if isinstance(obj, dict):
         return {
             k: remove_credit_fields(v)
             for k, v in obj.items()
             if k.lower() not in (
-                "credit",
-                "credits",
-                "credit_by",
-                "developer",
-                "powered_by"
+                "credit", "credits", "credit_by",
+                "developer", "powered_by"
             )
         }
     if isinstance(obj, list):
@@ -49,7 +45,7 @@ def number_api():
     if not num or not key:
         return jsonify({
             "error": "missing parameters",
-            "usage": "?num=Number&key=GOKU"
+            "usage": "?num=Number&key=ERROR"
         }), 400
 
     if key not in YOUR_API_KEYS:
@@ -68,22 +64,15 @@ def number_api():
         if r.status_code != 200:
             return jsonify({"error": "upstream failed"}), 502
 
-        try:
-            data = r.json()
-            data = clean_text(data)
-            data = remove_credit_fields(data)
-        except Exception:
-            data = {"result": r.text}
+        data = r.json()
+        data = clean_text(data)
+        data = remove_credit_fields(data)
 
-        # ✅ ONLY YOUR BRANDING
+        # ✅ YOUR BRANDING
         data["developer"] = "@Original_x_Owner"
         data["powered_by"] = "urslash-number-api"
 
-        cache[number] = {
-            "time": time.time(),
-            "data": data
-        }
-
+        cache[number] = {"time": time.time(), "data": data}
         return jsonify(data)
 
     except Exception as e:
@@ -92,9 +81,6 @@ def number_api():
             "details": str(e)
         }), 500
 
-# Vercel के लिए यह जरूरी है
-if __name__ == "__main__":
-    app.run()
-else:
-    # Vercel serverless environment के लिए
-    handler = app
+
+# 🔥 Vercel entry point (ONLY THIS)
+handler = app
