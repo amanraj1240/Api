@@ -4,5 +4,11 @@
       "runtime": "vercel-python@3.1.0",
       "maxDuration": 10
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.py"
+    }
+  ]
 }
