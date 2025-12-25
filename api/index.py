@@ -5,9 +5,8 @@ import time
 app = Flask(__name__)
 
 # ==================== CONFIG =====================
-YOUR_API_KEYS = ["ERROR"]   # 👈 jo key use karni ho wahi rakho
-TARGET_API = "https://numberinfoanshapi.api-e3a.workers.dev/"
-CACHE_TIME = 3600
+YOUR_API_KEYS = ["ERROR"]     # Access key
+CACHE_TIME = 3600             # 1 hour cache
 # ================================================
 
 cache = {}
@@ -55,24 +54,39 @@ def number_api():
     if len(number) < 10:
         return jsonify({"error": "invalid number"}), 400
 
-    cached = cache.get(number)
-    if cached and time.time() - cached["time"] < CACHE_TIME:
-        return jsonify(cached["data"])
+    # 🔹 Cache check
+    if number in cache and time.time() - cache[number]["time"] < CACHE_TIME:
+        return jsonify(cache[number]["data"])
 
     try:
-        r = requests.get(f"{TARGET_API}?num={number}", timeout=10)
-        if r.status_code != 200:
+        # 🔥 NEW RAVAN LOOKUP API
+        response = requests.get(
+            "https://ravan-lookup.vercel.app/api",
+            params={
+                "key": "Ravan",
+                "type": "mobile",
+                "term": number
+            },
+            timeout=10
+        )
+
+        if response.status_code != 200:
             return jsonify({"error": "upstream failed"}), 502
 
-        data = r.json()
+        data = response.json()
+
         data = clean_text(data)
         data = remove_credit_fields(data)
 
-        # ✅ YOUR BRANDING
-        data["developer"] = "@Original_x_Owner"
+        # ✅ DEVELOPER & BRANDING (UPDATED)
+        data["developer"] = "@urslash"
         data["powered_by"] = "urslash-number-api"
 
-        cache[number] = {"time": time.time(), "data": data}
+        cache[number] = {
+            "time": time.time(),
+            "data": data
+        }
+
         return jsonify(data)
 
     except Exception as e:
@@ -82,5 +96,5 @@ def number_api():
         }), 500
 
 
-# 🔥 Vercel entry point (ONLY THIS)
+# 🔥 VERCEL ENTRY POINT (DO NOT CHANGE)
 handler = app
